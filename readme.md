@@ -1,11 +1,14 @@
-# Modular Terrain Editor in Bevy
-
-(its a work in progress pretty much, not optimized, some rough features)
-
-Edit meshes (planes) by manipulating the vertices
-<p align="center">
-<img src="assets/imgs/example_wf.png"  width="80%" height="80%">
-<img src="assets/imgs/rivermap.png"  width="80%" height="80%">
-</p>
+TODO:
 
 
+- add brushes
+- add observers for picking, dragging, hover vertices
+- add mesh serialization/deserialization
+- brush: color vertex
+- brush change Y height
+- brush: noise apply
+- brush: set value
+- add undo
+- add terracing
+- add updating mesh real time
+- add ui
