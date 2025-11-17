@@ -2,10 +2,7 @@
 use std::f32::consts::FRAC_PI_2;
 use bevy::{color::palettes::css::WHITE, prelude::*};
 
-// pub mod core;
-pub mod editor;
-
-use crate::editor::{PlaneToEdit, BevyPGTerrainEditorPlugin};
+use bevy_pg_terrain_editor::prelude::{PlaneToEdit, BevyPGTerrainEditorPlugin};
 
 // use crate::editor::MTBEditorPlugin;
 
@@ -23,13 +20,13 @@ fn init(
     mut meshes:   ResMut<Assets<Mesh>>,
     mut materials:   ResMut<Assets<StandardMaterial>>
 ){
-
+    let halfs = Vec2::new(10.0, 10.0);
     commands.spawn(
         (
-            Mesh3d(meshes.add(Plane3d::new(Vec3::Z, Vec2::new(10.0, 10.0)))),
+            Mesh3d(meshes.add(Plane3d::new(Vec3::Z, halfs))),
             MeshMaterial3d(materials.add(StandardMaterial::from_color(Color::WHITE))),
             Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)).with_scale(Vec3::splat(0.5)).with_rotation(Quat::from_rotation_x(-FRAC_PI_2)),
-            PlaneToEdit
+            PlaneToEdit{dims: halfs*2.0}
         )
     );
 

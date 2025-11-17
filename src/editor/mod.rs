@@ -1,79 +1,62 @@
 use bevy::prelude::*;
-use bevy::mesh::VertexAttributeValues;
-use bevy::light::{NotShadowCaster, NotShadowReceiver};
 
 pub mod brush;
+pub mod pointer;
+pub mod vertex;
+
+use crate::editor::pointer::TerrainEditorPointerPlugin;
+use crate::editor::brush::TerrainEditorBrushesPlugin;
+use crate::editor::vertex::TerrainEditorVertexPlugin;
 
 pub struct BevyPGTerrainEditorPlugin;
-
-
 
 impl Plugin for BevyPGTerrainEditorPlugin {
     fn build(&self, app: &mut App) {
         app
-        .add_observer(init_plane_to_edit)
+        .add_plugins(TerrainEditorPointerPlugin)
+        .add_plugins(TerrainEditorBrushesPlugin)
+        .add_plugins(TerrainEditorVertexPlugin)
         ;
     }
 }
 
 
 #[derive(Component)]
-pub struct PlaneToEdit;
-
-#[derive(Component, Copy, Clone)]
-pub struct PlaneVertex {
-    pub index: usize,
-    pub loc: [f32;3],
-    pub clr: [f32;4]
-}
-impl PlaneVertex {
-    pub fn new(index: usize, loc: &[f32;3], clr: &[f32; 4]) -> Self{
-        PlaneVertex {loc: *loc, clr: *clr, index}
-    }
+pub struct PlaneToEdit{
+    pub dims: Vec2
 }
 
-#[derive(Component)]
-pub struct SelectedVertex;
+impl PlaneToEdit {
+    pub fn ray_intersection(
+        &self, 
+        loc: Vec3, 
+        scale: Vec3, 
+        origin: Vec3A, 
+        direction: Vec3A
+    ) -> Option<f32> {
 
+        let min_corner = Vec3A::new(loc.x - self.dims.x*0.5*scale.x, loc.y, loc.z - self.dims.y*0.5*scale.y);
+        let max_corner = Vec3A::new(loc.x + self.dims.x*0.5*scale.x, loc.y, loc.z + self.dims.y*0.5*scale.y);
 
-fn init_plane_to_edit(
-    trigger: On<Add, PlaneToEdit>,
-    mut commands:     Commands,
-    query:            Query<&Mesh3d, With<PlaneToEdit>>,
-    mut meshes:       ResMut<Assets<Mesh>>,
-    mut materials:    ResMut<Assets<StandardMaterial>>
-){
-
-    let Ok(mesh3d) = query.get(trigger.entity) else {return;};
-    let Some(mesh) = meshes.get(&mesh3d.0) else {return;};
-
-    let v_pos: Vec<[f32; 3]> = mesh.attribute(Mesh::ATTRIBUTE_POSITION).unwrap().as_float3().unwrap().to_vec();
-    let mut v_clr: Vec<[f32; 4]> = Vec::new();
-    if let Some(attr_vcolor) = mesh.attribute(Mesh::ATTRIBUTE_COLOR) {
-        if let VertexAttributeValues::Float32x4(vcolors) = attr_vcolor {
-            v_clr = vcolors.to_vec();
+        let inv_dir = direction.recip();
+        
+        let t1 = (min_corner - origin) * inv_dir;
+        let t2 = (max_corner - origin) * inv_dir;
+        
+        let t_min = Vec3A::min(t1, t2);
+        let t_max = Vec3A::max(t1, t2);
+        
+        let t_enter = t_min.max_element();
+        let t_exit = t_max.min_element();
+        
+        let hit: bool = t_enter <= t_exit && t_exit >= 0.0;
+        if hit {
+            return Some(t_enter.max(0.0));
+        } else {
+            // error!("Issue for ray_intersection with {:?}, ray: {:?}", self, ray);
+            return None;
         }
-    } else {
-        v_clr = vec![[1.0, 1.0, 1.0, 1.0]; v_pos.len()];
     }
-
-    let mut vertices: Vec<Entity> = Vec::new();
-    let vertex_mesh = Mesh3d(meshes.add(Sphere{radius: 1.0, ..default()}));
-    let vertex_mat = MeshMaterial3d(materials.add(Color::BLACK.with_alpha(0.85)));
-
-    for (index, pos) in v_pos.iter().enumerate(){
-
-        let entity = commands.spawn((
-            vertex_mesh.clone(),
-            vertex_mat.clone(),
-            NotShadowCaster,
-            NotShadowReceiver,
-            Transform::from_translation(pos.clone().into()).with_scale(Vec3::splat(1.0)),
-            PlaneVertex::new(index, pos, &v_clr[index]),
-        )).id();
-
-        vertices.push(entity);
-    }
-
-    commands.entity(trigger.entity).add_children(&vertices);
 }
+
+
