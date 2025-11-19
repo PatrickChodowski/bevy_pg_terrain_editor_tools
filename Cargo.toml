@@ -10,7 +10,7 @@ resolver = "2"
 
 [dependencies]
 bevy = { version = "0.17", default-features = true}
-bevy_pg_editor_tools = {path = "../bevy_pg_editor_tools"}
+bevy_pg_editor_tools = {git="https://www.github.com/PatrickChodowski/bevy_pg_editor_tools"}
 bevy_enhanced_input = "0.19.3"
 log = { version = "0.4", features = [
     "max_level_debug",

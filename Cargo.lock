@@ -1027,6 +1027,7 @@ dependencies = [
 [[package]]
 name = "bevy_pg_editor_tools"
 version = "0.1.0"
+source = "git+https://www.github.com/PatrickChodowski/bevy_pg_editor_tools#96e1a43102adbd0020333c54deeac2859ce63cf8"
 dependencies = [
  "bevy",
  "bevy_enhanced_input",
