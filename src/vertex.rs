@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy::mesh::SerializedMesh;
 use bevy::mesh::VertexAttributeValues;
 use bevy::light::{NotShadowCaster, NotShadowReceiver};
 use bevy::color::palettes::css::ORANGE_RED;
@@ -18,8 +19,33 @@ impl Plugin for TerrainEditorVertexPlugin {
         .add_observer(deselect_vertex)
         .add_observer(deselect_all_vertices)
         .add_systems(Update, vertex_changed)
+        .add_observer(serialize_planes)
         ;
     }
+}
+
+#[derive(InputAction)]
+#[action_output(bool)]
+struct SerializePlanes;
+
+fn serialize_planes(
+    _trigger: On<Fire<SerializePlanes>>,
+    meshes:   Res<Assets<Mesh>>,
+    query:   Query<&Mesh3d, With<PlaneToEdit>>
+){
+    for mesh3d in query.iter(){
+        let Some(mesh) = meshes.get(&mesh3d.0) else {continue;};
+        let serialized_mesh = SerializedMesh::from_mesh(mesh.clone());
+        let json = serde_json::to_string_pretty(&serialized_mesh).unwrap();
+        let _a = std::fs::write("assets/meshes/mesh_serialized.json", json);
+    }
+}
+
+pub fn load_mesh_from_file(path: &str) -> std::io::Result<Mesh> {
+    let json = std::fs::read_to_string(path)?;
+    let serialized: SerializedMesh = serde_json::from_str(&json)
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+    return Ok(serialized.into_mesh());
 }
 
 #[derive(Component, Reflect)]
@@ -34,6 +60,11 @@ pub fn terrain_vertex_controller() -> impl Bundle {
                     Action::<DeselectAllVertices>::new(),
                     Press::default(),
                     bindings![MouseButton::Right]
+                ),
+                (
+                    Action::<SerializePlanes>::new(),
+                    Press::default(),
+                    bindings![KeyCode::Space]
                 )
             ]
         )
